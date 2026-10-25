@@ -20,8 +20,9 @@ This is a fork of [`ianharrier/synology-scripts`](https://github.com/ianharrier/
 ## Installation
 
 1. Copy the script to your NAS, for example `/volume1/scripts/reconnect-vpn.sh`.
+ Make a new share 'scripts' this will appear as '/volume1/scripts'
 2. Lock it down, since it runs as root:
-
+  Connect with SSH with your favorite client, windows Putty
    ```bash
    sudo chown root:root /volume1/scripts/reconnect-vpn.sh
    sudo chmod 700 /volume1/scripts/reconnect-vpn.sh
