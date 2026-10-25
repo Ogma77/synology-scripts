@@ -263,14 +263,14 @@ fi
 
 do_reconnect() {
 	log I "Attempting to reconnect."
-	"$SYNOVPNC" kill_client
+	"$SYNOVPNC" kill_client 9>&-   # close the lock fd so a daemon cannot inherit it
 	sleep "$KILL_WAIT_SEC"
 
 	printf 'conf_id=%s\nconf_name=%s\nproto=%s\n' \
 		"$PROFILE_ID" "$PROFILE_NAME" "$PROFILE_PROTOCOL" \
 		> "$CONF_BASE/vpnc_connecting"
 
-	"$SYNOVPNC" connect --id="$PROFILE_ID"
+	"$SYNOVPNC" connect --id="$PROFILE_ID" 9>&-
 
 	# Poll instead of sleeping a fixed time
 	local waited=0
