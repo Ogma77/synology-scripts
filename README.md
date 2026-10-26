@@ -19,11 +19,28 @@ This is a fork of [`ianharrier/synology-scripts`](https://github.com/ianharrier/
 
 ## Installation
 
-1. Copy the script to a private location on the NAS, for example
+1. Enable SSH on the NAS if it is currently disabled:
+   - **Control Panel > Terminal & SNMP**
+   - Enable **Enable SSH service**
+   - If needed, also allow **Enable root account** or use a local admin account with
+     suitable privileges for the shell session
+2. Connect to the NAS over SSH:
+
+   ```bash
+   ssh root@<nas-ip>
+   ```
+
+   or, if your DSM setup requires a non-root admin account:
+
+   ```bash
+   ssh <admin-user>@<nas-ip>
+   ```
+
+3. Copy the script to a private location on the NAS, for example
    `/volume1/scripts/reconnect-vpn.sh`.
    - Use a dedicated script directory that is not writable by normal users.
    - Do not install it in a shared or world-writable location.
-2. Make sure the script is owned by `root` and not writable by group or others:
+4. Make sure the script is owned by `root` and not writable by group or others:
 
    ```bash
    sudo chown root:root /volume1/scripts/reconnect-vpn.sh
@@ -32,14 +49,18 @@ This is a fork of [`ianharrier/synology-scripts`](https://github.com/ianharrier/
 
    The script intentionally refuses to run if it is not root-owned or is writable by
    non-root users, because it executes privileged DSM VPN commands as root.
-3. Test it manually while the VPN is connected:
+5. Test it manually while the VPN is connected:
 
    ```bash
    sudo /volume1/scripts/reconnect-vpn.sh
    ```
 
    You should see `Reconnect is not needed.`
-4. Schedule it with DSM Task Scheduler as the `root` user (see below).
+6. Disable SSH again after installation if you do not need it to stay enabled:
+   - **Control Panel > Terminal & SNMP**
+   - Disable **Enable SSH service**
+   - This reduces the attack surface while keeping the scheduled script in place.
+7. Schedule it with DSM Task Scheduler as the `root` user (see below).
 
 ## Configuration
 
