@@ -66,8 +66,18 @@ log() { printf '%s [%s] %s\n' "$(date '+%F %T')" "$1" "$2"; }
 # True if the file is root-owned and not group/world-writable.
 file_is_safe() {
 	local f=$1 owner perms
+	[[ -e $f && -f $f && ! -L $f ]] || return 1
 	owner=$(stat -c %u "$f" 2>/dev/null) || return 1
 	perms=$(stat -c %A "$f" 2>/dev/null) || return 1
+	[[ $owner == 0 && ${perms:5:1} != w && ${perms:8:1} != w ]]
+}
+
+# True if the directory is root-owned and not group/world-writable.
+dir_is_safe() {
+	local d=$1 owner perms
+	[[ -d $d && ! -L $d ]] || return 1
+	owner=$(stat -c %u "$d" 2>/dev/null) || return 1
+	perms=$(stat -c %A "$d" 2>/dev/null) || return 1
 	[[ $owner == 0 && ${perms:5:1} != w && ${perms:8:1} != w ]]
 }
 
@@ -85,14 +95,34 @@ if [[ ! -x $SYNOVPNC ]]; then
 	exit 3
 fi
 
-if [[ ! -r $CONF_BASE ]]; then
-	log E "Cannot read $CONF_BASE. Exiting."
+if [[ ! -d $CONF_BASE || ! -r $CONF_BASE || -L $CONF_BASE ]]; then
+	log E "Cannot safely read $CONF_BASE. Exiting."
+	exit 3
+fi
+
+if ! dir_is_safe "$CONF_BASE"; then
+	log E "$CONF_BASE must be root-owned and not group/world-writable. Exiting."
 	exit 3
 fi
 
 SELF=${BASH_SOURCE[0]}
 if ! file_is_safe "$SELF"; then
-	log E "$SELF must be root-owned and not group/world-writable. Exiting."
+	log E "$SELF must be root-owned, a regular file, and not group/world-writable. Exiting."
+	exit 3
+fi
+
+if [[ -e $LOCKFILE && ( -L $LOCKFILE || ! -f $LOCKFILE ) ]]; then
+	log E "$LOCKFILE must not be a symlink or a non-regular file. Exiting."
+	exit 3
+fi
+
+if [[ -e $CONF_BASE/vpnc_connecting && ( -L $CONF_BASE/vpnc_connecting || ! -f $CONF_BASE/vpnc_connecting ) ]]; then
+	log E "$CONF_BASE/vpnc_connecting must not be a symlink or a non-regular file. Exiting."
+	exit 3
+fi
+
+if ! file_is_safe "$SYNOVPNC"; then
+	log E "$SYNOVPNC must be root-owned, a regular file, and not group/world-writable. Exiting."
 	exit 3
 fi
 
@@ -144,7 +174,18 @@ if [[ ${#CONF_FILES[@]} -eq 0 ]]; then
 	exit 3
 fi
 
-# Output: <id>\t<name>\t<reconnect>
+for cf in "${CONF_FILES[@]}"; do
+	if [[ -L $cf || ! -f $cf || ! -r $cf ]]; then
+		log E "Unsafe VPN config file '$cf'. Exiting."
+		exit 3
+	fi
+	if ! file_is_safe "$cf"; then
+		log E "VPN config file '$cf' must be root-owned and not group/world-writable. Exiting."
+		exit 3
+	fi
+done
+
+# Output: <id>	<name>	<reconnect>
 PARSED=$(awk '
 	function emit() {
 		if (id ~ /^[lop][0-9]+$/ && name != "") printf "%s\t%s\t%s\n", id, name, reconn
