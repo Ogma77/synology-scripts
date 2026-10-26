@@ -92,7 +92,8 @@ fi
 
 SELF=${BASH_SOURCE[0]}
 if ! file_is_safe "$SELF"; then
-	log W "$SELF should be root-owned and not group/world-writable (it runs as root)."
+	log E "$SELF must be root-owned and not group/world-writable. Exiting."
+	exit 3
 fi
 
 case $VPN_CHECK_METHOD in
