@@ -19,24 +19,27 @@ This is a fork of [`ianharrier/synology-scripts`](https://github.com/ianharrier/
 
 ## Installation
 
-1. Copy the script to your NAS, for example `/volume1/scripts/reconnect-vpn.sh`.
- Make a new share 'scripts' this will appear as '/volume1/scripts'
-2. Lock it down, since it runs as root:
-  Connect with SSH with your favorite client, windows Putty
+1. Copy the script to a private location on the NAS, for example
+   `/volume1/scripts/reconnect-vpn.sh`.
+   - Use a dedicated script directory that is not writable by normal users.
+   - Do not install it in a shared or world-writable location.
+2. Make sure the script is owned by `root` and not writable by group or others:
+
    ```bash
    sudo chown root:root /volume1/scripts/reconnect-vpn.sh
    sudo chmod 700 /volume1/scripts/reconnect-vpn.sh
    ```
 
-3. Test it by hand while the VPN is connected:
+   The script intentionally refuses to run if it is not root-owned or is writable by
+   non-root users, because it executes privileged DSM VPN commands as root.
+3. Test it manually while the VPN is connected:
 
    ```bash
    sudo /volume1/scripts/reconnect-vpn.sh
    ```
 
    You should see `Reconnect is not needed.`
-
-4. Schedule it (see below).
+4. Schedule it with DSM Task Scheduler as the `root` user (see below).
 
 ## Configuration
 
